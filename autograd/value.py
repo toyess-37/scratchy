@@ -88,6 +88,30 @@ class Value:
     out._backward = _backward
     return out
 
+  def exp(self):
+    out = Value(math.exp(self.data), (self,), 'exp')
+    def _backward():
+      self.grad += out.data * out.grad
+
+    out._backward = _backward
+    return out
+
+  def log(self):
+    out = Value(math.log(self.data), (self,), 'log')
+    def _backward():
+      self.grad += (1.0/self.data) * out.grad
+
+    out._backward = _backward
+    return out
+
+  def __truediv__(self, other):
+    other = other if isinstance(other, Value) else Value(other)
+    return self * (other ** -1)
+
+  def __rtruediv__(self, other):
+    other = other if isinstance(other, Value) else Value(other)
+    return other / self
+
   def backward(self):
     self.grad = 1.0
 
@@ -167,15 +191,15 @@ def check_gradient(f, var, eps=1e-6):
   return numerical_grad
 
 
-# a = Value(2.0, label='a')
-# b = Value(-3.0, label='b')
-# c = Value(10.0, label='c')
+a = Value(2.0, label='a')
+b = Value(-3.0, label='b')
+c = Value(10.0, label='c')
 
-# def lol():
-#   return 5 - (a**2) + (2*a)
+def lol():
+  return (a.exp() + b.exp()).log() / c
 
-# L = lol()
-# L.backward()
-# L.zero_grad()
-# L.backward()
-# print(f"a.grad = {a.grad}")
+L = lol()
+L.backward()
+print(f"{check_gradient(lol, a)} | a.grad = {a.grad}")
+print(f"{check_gradient(lol, b)} | b.grad = {b.grad}")
+print(f"{check_gradient(lol, c)} | c.grad = {c.grad}")
