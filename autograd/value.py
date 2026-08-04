@@ -37,6 +37,37 @@ class Value:
     out._backward = _backward
     return out
 
+  def __neg__(self):
+    out = Value(-self.data, (self,), '-op')
+
+    def _backward():
+      self.grad += -1 * out.grad
+
+    out._backward = _backward
+    return out
+
+  def __sub__(self, other):
+    return self + (-other)
+
+  def __radd__(self, other):
+    return self + other
+
+  def __rmul__(self, other):
+    return self * other
+
+  def __rsub__(self, other):
+    return Value(other) + (-self)
+
+  def __pow__(self, other):
+    assert isinstance(other, (int, float)), "only int/float powers"
+    out = Value(self.data**other, (self,), f'**{other}')
+
+    def _backward():
+      self.grad += other * (self.data ** (other-1)) * out.grad
+
+    out._backward = _backward
+    return out
+
   def tanh(self):
     x = self.data
     t = (math.exp(2*x)-1)/(math.exp(2*x)+1)
@@ -136,15 +167,15 @@ def check_gradient(f, var, eps=1e-6):
   return numerical_grad
 
 
-a = Value(2.0, label='a')
-b = Value(-3.0, label='b')
-c = Value(10.0, label='c')
+# a = Value(2.0, label='a')
+# b = Value(-3.0, label='b')
+# c = Value(10.0, label='c')
 
-def lol():
-  return a*a+a
+# def lol():
+#   return 5 - (a**2) + (2*a)
 
-L = lol()
-L.backward()
-L.zero_grad()
-L.backward()
-print(f"a.grad = {a.grad}")
+# L = lol()
+# L.backward()
+# L.zero_grad()
+# L.backward()
+# print(f"a.grad = {a.grad}")

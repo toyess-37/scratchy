@@ -10,22 +10,29 @@ class Module:
     return []
 
 class Neuron(Module):
-  def __init__(self, nin):
+  def __init__(self, nin, nonlin='tanh'):
     self.w = [Value(random.uniform(-1,1)) for _ in range(nin)]
     self.b = Value(random.uniform(-1,1))
+    self.nonlin = nonlin
 
   def __call__(self, x):
     # w*x + b
     act = sum((wi * xi for wi, xi in zip(self.w, x)), self.b)
-    out = act.relu()
-    return out
+    if self.nonlin == 'tanh':
+      return act.tanh()
+    elif self.nonlin == 'relu':
+      return act.relu()
+    elif self.nonlin == 'none':
+      return act
+    else:
+      raise ValueError(f"Unknown activation: {self.nonlin}")
 
   def parameters(self):
     return self.w + [self.b]
 
 class Layer(Module):
-  def __init__(self, nin, nout):
-    self.neurons = [Neuron(nin) for _ in range(nout)]
+  def __init__(self, nin, nout, nonlin='tanh'):
+    self.neurons = [Neuron(nin, nonlin=nonlin) for _ in range(nout)]
 
   def __call__(self, x):
     outs = [n(x) for n in self.neurons]
@@ -35,9 +42,9 @@ class Layer(Module):
     return [p for neuron in self.neurons for p in neuron.parameters()]
 
 class MLP(Module):
-  def __init__(self, nin, nouts):
+  def __init__(self, nin, nouts, nonlin='tanh'):
     sz = [nin] + nouts
-    self.layers = [Layer(sz[i], sz[i+1]) for i in range(len(nouts))]
+    self.layers = [Layer(sz[i], sz[i+1], nonlin=nonlin) for i in range(len(nouts))]
 
   def __call__(self, x):
     for layer in self.layers:
@@ -47,11 +54,11 @@ class MLP(Module):
   def parameters(self):
     return [p for layer in self.layers for p in layer.parameters()]
 
-x = [2.0, 3.0, -1.0]
-n = MLP(3, [4, 4, 1])
+# x = [2.0, 3.0, -1.0]
+# n = MLP(3, [4, 4, 1])
 
-out = n(x)
-print("Forward pass output:", out)
+# out = n(x)
+# print("Forward pass output:", out)
 
-dot = draw_dot(out)
-dot.render('mlp_graph_relu', view=True)
+# dot = draw_dot(out)
+# dot.render('mlp_graph_relu', view=True)
