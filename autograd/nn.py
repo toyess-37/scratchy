@@ -22,7 +22,7 @@ class Neuron(Module):
       return act.tanh()
     elif self.nonlin == 'relu':
       return act.relu()
-    elif self.nonlin == 'none':
+    elif self.nonlin == 'none' or self.nonlin is None:
       return act
     else:
       raise ValueError(f"Unknown activation: {self.nonlin}")
@@ -44,7 +44,11 @@ class Layer(Module):
 class MLP(Module):
   def __init__(self, nin, nouts, nonlin='tanh'):
     sz = [nin] + nouts
-    self.layers = [Layer(sz[i], sz[i+1], nonlin=nonlin) for i in range(len(nouts))]
+    self.layers = []
+
+    for i in range(len(nouts)):
+      layer_nonlin = nonlin if i < len(nouts)-1 else 'none'
+      self.layers.append(Layer(sz[i], sz[i+1], nonlin=layer_nonlin))
 
   def __call__(self, x):
     for layer in self.layers:
