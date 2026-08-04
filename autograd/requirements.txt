@@ -1,2 +1,4 @@
 graphviz
 scikit-learn
+pandas
+numpy
