@@ -195,11 +195,11 @@ a = Value(2.0, label='a')
 b = Value(-3.0, label='b')
 c = Value(10.0, label='c')
 
-def lol():
-  return (a.exp() + b.exp()).log() / c
+# def lol():
+#   return (a.exp() + b.exp()).log() / c
 
-L = lol()
-L.backward()
-print(f"{check_gradient(lol, a)} | a.grad = {a.grad}")
-print(f"{check_gradient(lol, b)} | b.grad = {b.grad}")
-print(f"{check_gradient(lol, c)} | c.grad = {c.grad}")
+# L = lol()
+# L.backward()
+# print(f"{check_gradient(lol, a)} | a.grad = {a.grad}")
+# print(f"{check_gradient(lol, b)} | b.grad = {b.grad}")
+# print(f"{check_gradient(lol, c)} | c.grad = {c.grad}")
