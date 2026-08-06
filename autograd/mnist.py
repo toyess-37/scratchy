@@ -1,30 +1,40 @@
 from sklearn.datasets import fetch_openml
 import numpy as np
-import random
+from tensor import Tensor
+from nn_tensor import MLP
+from losses import vectorized_softmax_cross_entropy
+from train_mnist import Trainer
+from utils_mnist import Profiler, get_batches
 
 # from value import Value
 # from nn import MLP
 # from losses import softmax_cross_entropy
 
-from tensor import Tensor
-from nn_tensor import MLP
-from losses import vectorized_softmax_cross_entropy
-
 print("Fetching MNIST:")
 mnist = fetch_openml('mnist_784', version=1, as_frame=False)
 X_raw, y_raw = mnist.data, mnist.target.astype(int)
+X_norm = (X_raw / 255.0).astype(np.float32)
 
-X_norm = X_raw / 255.0
+X_train, y_train = X_norm[:5000], y_raw[:5000]
+X_val, y_val = X_norm[5000:6000], y_raw[5000:6000]
 
-def get_batches(X, y, batch_size=32):
-  num_samples = len(X)
-  indices = list(range(num_samples))
-  random.shuffle(indices)
+model = MLP(784, [64, 10], nonlin='relu')
+trainer = Trainer(model, lr=0.1)
 
-  for i in range(0, num_samples, batch_size):
-    batch_idx = indices[i : i+batch_size]
-    yield X[batch_idx], y[batch_idx]
+print("Benchmark:")
+with Profiler() as p:
+  for epoch in range(10):
+    loss = trainer.train_epoch(X_train, y_train, get_batches, batch_size=64)
+    acc = trainer.evaluate(X_val, y_val)
 
+    print(f"Epoch {epoch+1:02d} | Train loss: {loss:.4f} | Val. Acc.: {acc:.2f}%")
+
+print(f"\nTraining complete.")
+print(f"Total time elapsed: {p.elapsed_time:.2f} secs")
+print(f"Peak RAM allocated: {p.peak_ram_mb:.2f} MB")
+
+# # --------------------------------------------------
+# # OLD STUFF:
 # X_sub = X_norm[:50]
 # y_sub = y_raw[:50]
 #
@@ -40,45 +50,46 @@ def get_batches(X, y, batch_size=32):
 # for row in sample_img:
 #   print("".join(["#" if pixel > 0.5 else " " for pixel in row]))
 
-X_sub = X_norm[:100]
-y_sub = y_raw[:100]
-
-model = MLP(784, [32, 10], nonlin='relu')
-
-# print("\nRunning single mini-batch test:")
-print("\nTesting Vectorized Forward and Backward Pass:")
-
-for images, labels in get_batches(X_sub, y_sub, batch_size=16):
-  # FOR VALUE (SCALAR):
-  # batch_loss = Value(0.0)
-
-  # for img, target in zip(images, labels):
-  #   x = [Value(pixel) for pixel in img]
-  #   logits = model(x)
-  #   loss = softmax_cross_entropy(logits, target)
-
-  #   batch_loss = batch_loss + loss
-
-  # model.zero_grad()
-  # batch_loss.backward()
-
-  # print(f"Batch loss: {batch_loss.data:.4f}")
-  # print("Backpropagation done.")
-  # break
-
-  # ----------------------------------------
-  # FOR TENSOR:
-  x = Tensor(images) # Tensor shape (16, 784)
-  logits = model(x)
-
-  loss = vectorized_softmax_cross_entropy(logits, labels)
-
-  model.zero_grad()
-  loss.backward()
-
-  print(f"Input batch shape: {x.data.shape}")
-  print(f"Logits shape: {logits.data.shape}")
-  print(f"Batch loss: {loss.data:.4f}")
-  print(f"Weight gradient shape (Layer 1): {model.layers[0].w.grad.shape}")
-  print("Backward pass done.")
-  break
+# # SANITY CHECK PART:
+# X_sub = X_norm[:100]
+# y_sub = y_raw[:100]
+#
+# model = MLP(784, [32, 10], nonlin='relu')
+#
+# # print("\nRunning single mini-batch test:")
+# print("\nTesting Vectorized Forward and Backward Pass:")
+#
+# for images, labels in get_batches(X_sub, y_sub, batch_size=16):
+#   # FOR VALUE (SCALAR):
+#   # batch_loss = Value(0.0)
+#
+#   # for img, target in zip(images, labels):
+#   #   x = [Value(pixel) for pixel in img]
+#   #   logits = model(x)
+#   #   loss = softmax_cross_entropy(logits, target)
+#
+#   #   batch_loss = batch_loss + loss
+#
+#   # model.zero_grad()
+#   # batch_loss.backward()
+#
+#   # print(f"Batch loss: {batch_loss.data:.4f}")
+#   # print("Backpropagation done.")
+#   # break
+#
+#   # ----------------------------------------
+#   # FOR TENSOR:
+#   x = Tensor(images) # Tensor shape (16, 784)
+#   logits = model(x)
+#
+#   loss = vectorized_softmax_cross_entropy(logits, labels)
+#
+#   model.zero_grad()
+#   loss.backward()
+#
+#   print(f"Input batch shape: {x.data.shape}")
+#   print(f"Logits shape: {logits.data.shape}")
+#   print(f"Batch loss: {loss.data:.4f}")
+#   print(f"Weight gradient shape (Layer 1): {model.layers[0].w.grad.shape}")
+#   print("Backward pass done.")
+#   break
