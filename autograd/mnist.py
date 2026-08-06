@@ -15,16 +15,24 @@ mnist = fetch_openml('mnist_784', version=1, as_frame=False)
 X_raw, y_raw = mnist.data, mnist.target.astype(int)
 X_norm = (X_raw / 255.0).astype(np.float32)
 
-X_train, y_train = X_norm[:5000], y_raw[:5000]
-X_val, y_val = X_norm[5000:6000], y_raw[5000:6000]
+X_train, y_train = X_norm[:50000], y_raw[:50000]
+X_val, y_val = X_norm[50000:60000], y_raw[50000:60000]
+X_test, y_test = X_norm[60000:70000], y_raw[60000:70000]
 
 model = MLP(784, [64, 10], nonlin='relu')
-trainer = Trainer(model, lr=0.1)
+trainer = Trainer(model, lr=0.05)
+
+epochs = 10
+batch_size = 64
 
 print("Benchmark:")
 with Profiler() as p:
-  for epoch in range(10):
-    loss = trainer.train_epoch(X_train, y_train, get_batches, batch_size=64)
+  for epoch in range(epochs):
+    if epoch == 5:
+      trainer.lr *= 0.5
+      print(f"reduced learning rate to {trainer.lr}")
+    
+    loss = trainer.train_epoch(X_train, y_train, get_batches, batch_size=batch_size)
     acc = trainer.evaluate(X_val, y_val)
 
     print(f"Epoch {epoch+1:02d} | Train loss: {loss:.4f} | Val. Acc.: {acc:.2f}%")
@@ -32,6 +40,13 @@ with Profiler() as p:
 print(f"\nTraining complete.")
 print(f"Total time elapsed: {p.elapsed_time:.2f} secs")
 print(f"Peak RAM allocated: {p.peak_ram_mb:.2f} MB")
+print(f"\nTesting phase:")
+test_acc = trainer.evaluate(X_test, y_test)
+print(f"Final Test Accuracy: {test_acc:.2f}%")
+# output:
+# Testing phase:
+# Final Test Accuracy: 95.64%
+
 
 # # --------------------------------------------------
 # # OLD STUFF:
