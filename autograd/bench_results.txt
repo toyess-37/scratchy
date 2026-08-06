@@ -1,0 +1,6 @@
+Loading data:
+Running Scalar Engine:
+Scalar Engine Time (200 images): 22.0753 seconds
+Running Vectorized Engine:
+Tensor Engine Time (200 images): 0.0071 seconds
+Speedup Factor: 3126.0

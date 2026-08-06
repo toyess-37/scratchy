@@ -1,0 +1,20 @@
+Fetching MNIST:
+Benchmark:
+Epoch 01 | Train loss: 0.5123 | Val. Acc.: 91.29%
+Epoch 02 | Train loss: 0.2789 | Val. Acc.: 93.24%
+Epoch 03 | Train loss: 0.2315 | Val. Acc.: 94.14%
+Epoch 04 | Train loss: 0.2004 | Val. Acc.: 95.05%
+Epoch 05 | Train loss: 0.1773 | Val. Acc.: 95.50%
+reduced learning rate to 0.025
+Epoch 06 | Train loss: 0.1591 | Val. Acc.: 95.72%
+Epoch 07 | Train loss: 0.1510 | Val. Acc.: 95.90%
+Epoch 08 | Train loss: 0.1440 | Val. Acc.: 96.11%
+Epoch 09 | Train loss: 0.1375 | Val. Acc.: 96.22%
+Epoch 10 | Train loss: 0.1312 | Val. Acc.: 96.31%
+
+Training complete.
+Total time elapsed: 36.11 secs
+Peak RAM allocated: 1422.87 MB
+
+Testing phase:
+Final Test Accuracy: 95.78%
