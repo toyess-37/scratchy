@@ -5,7 +5,7 @@ class Layer:
   def __init__(self, nin, nout, nonlin='relu'):
     # weights initialized with gaussian distribution
     self.w = Tensor(np.random.randn(nin, nout)*np.sqrt(2.0/nin))
-    self.b = Tensor(np.zeros(1, nout))
+    self.b = Tensor(np.zeros((1, nout)))
     self.nonlin = nonlin
 
   def __call__(self, x):
