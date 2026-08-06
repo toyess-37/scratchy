@@ -97,9 +97,10 @@ class Value:
     return out
 
   def log(self):
-    out = Value(math.log(self.data), (self,), 'log')
+    safe_data = max(self.data, 1e-15)
+    out = Value(math.log(safe_data), (self,), 'log')
     def _backward():
-      self.grad += (1.0/self.data) * out.grad
+      self.grad += (1.0/safe_data) * out.grad
 
     out._backward = _backward
     return out
