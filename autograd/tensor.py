@@ -43,11 +43,82 @@ class Tensor:
     out = Tensor(self.data @ other.data, (self, other), '@')
 
     def _backward():
-      # d (A @ B)/dA = grad @ B.T
-      # d(A @ B)/dB = A.T @ grad
+      # swapaxes(-1, -2) generalizes .T to batched (B, ..., T, D) tensors
+      self.grad += self._unbroadcast(out.grad @ other.data.swapaxes(-1, -2), self.data.shape)
+      other.grad += self._unbroadcast(self.data.swapaxes(-1, -2) @ out.grad, other.data.shape)
 
-      self.grad += out.grad @ other.data.T
-      other.grad += self.data.T @ out.grad
+    out._backward = _backward
+    return out
+
+  def __mul__(self, other):
+    other = other if isinstance(other, Tensor) else Tensor(other)
+    out = Tensor(self.data * other.data, (self, other), '*')
+
+    def _backward():
+      self.grad += self._unbroadcast(other.data * out.grad, self.data.shape)
+      other.grad += self._unbroadcast(self.data * out.grad, other.data.shape)
+
+    out._backward = _backward
+    return out
+
+  def __rmul__(self, other):
+    return self * other
+
+  def __truediv__(self, other):
+    other = other if isinstance(other, Tensor) else Tensor(other)
+    out = Tensor(self.data / other.data, (self, other), '/')
+
+    def _backward():
+      self.grad += self._unbroadcast(out.grad / other.data, self.data.shape)
+      other.grad += self._unbroadcast(-out.grad * self.data / (other.data ** 2), other.data.shape)
+
+    out._backward = _backward
+    return out
+
+  def __pow__(self, other):
+    assert isinstance(other, (int, float)), 'only scalar powers supported'
+    out = Tensor(self.data ** other, (self,), f'**{other}')
+
+    def _backward():
+      self.grad += other * (self.data ** (other - 1)) * out.grad
+
+    out._backward = _backward
+    return out
+
+  def transpose(self, axis1=-2, axis2=-1):
+    out = Tensor(np.swapaxes(self.data, axis1, axis2), (self,), 'transpose')
+
+    def _backward():
+      self.grad += np.swapaxes(out.grad, axis1, axis2)
+
+    out._backward = _backward
+    return out
+
+  def reshape(self, *shape):
+    if len(shape) == 1 and isinstance(shape[0], (tuple, list)):
+      shape = shape[0]
+    out = Tensor(self.data.reshape(shape), (self,), 'reshape')
+
+    def _backward():
+      self.grad += out.grad.reshape(self.data.shape)
+
+    out._backward = _backward
+    return out
+
+  def mean(self, axis=None, keepdims=False):
+    n = self.data.size if axis is None else np.prod([self.data.shape[a] for a in np.atleast_1d(axis)])
+    return self.sum(axis=axis, keepdims=keepdims) * (1.0 / n)
+
+  @staticmethod
+  def cat(tensors, axis=-1):
+    out = Tensor(np.concatenate([t.data for t in tensors], axis=axis), tuple(tensors), 'cat')
+    sizes = [t.data.shape[axis] for t in tensors]
+
+    def _backward():
+      splits = np.cumsum(sizes)[:-1]
+      grads = np.split(out.grad, splits, axis=axis)
+      for t, g in zip(tensors, grads):
+        t.grad += g
 
     out._backward = _backward
     return out
